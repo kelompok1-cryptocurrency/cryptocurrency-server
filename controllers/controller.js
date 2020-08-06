@@ -1,6 +1,7 @@
 const { User } = require('../models/index.js');
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
+const axios = require("axios")
 
 class Controller {
     static userLogin(req, res, next){
@@ -11,7 +12,6 @@ class Controller {
             }})
             .then(data=>{
                 if (data) {
-                    console.log(data)
                     let status = bcrypt.compareSync(password,data.password)
                     if (status) {
                         let access_token = jwt.sign({
@@ -24,19 +24,13 @@ class Controller {
                             access_token
                         })
                     } else {
-                        next({
-                            status:"404",
-                            message:"Wrong email/password"
-                        })
+                        res.status(400).json(err)
                     }
                 } else {
-                    next({
-                        status:"404",
-                        message:"Wrong email/password"
-                    })
+                    res.status(404).json(err)
                 }
             })
-            .catch(err=>next(err))
+            .catch(err=>res.status(500).json(err))
     }
 
     static userRegister(req, res, next){
@@ -45,54 +39,37 @@ class Controller {
         .then(data=>{
             res.status(201).json(data)
         })
-        .catch(err=>next(err))
+        .catch(err=>res.status(400).json(err))
     }
 
     static googleLogin(req, res, next){
         //welp
     }
 
-    static home(req, res, next){
-        
+    static async home(req, res, next){
+        try {
+                let holidayDate = await axios({
+                    method:"GET",
+                    url:`https://holidays.abstractapi.com/v1/?api_key=${process.env.HOLIDAY_KEY}&country=ID&year=2020&month=08&day=17`
+                })
+                let motivationQuote = await axios({
+                    method:"GET",
+                    url:"https://api.adviceslip.com/advice",
+                })
+                let currency = await axios({
+                    method:"GET",
+                    url:`http://api.coinlayer.com/api/live?access_key=${process.env.CURRENCY_KEY}`
+                })
+                // console.log(holidayDate.data)
+                // console.log(motivationQuote.data)
+                // console.log(currency.data.rates)
+                res.status(200).json("success")
+        } catch (error) {
+            res.status(500).json(error)
+        }
     }
 }
 
 module.exports = Controller
 
 
-/*"use strict"
-
-const axios = require("axios")
-
-async function apiGetHoliday() {
-    const key = '27c1007c-3436-438a-95b1-6542aa92a588'
-    axios({
-        method:"GET",
-        url:`https://holidayapi.com/v1/holidays?pretty&key=${key}&country=ID&year=2019`
-    })
-    .then(data=>{message = data.data})
-    .catch(err=>{return err})
-}
-
-async function apiGetMotivation() {
-    axios({
-        method:"GET",
-        url:"https://api.adviceslip.com/advice",
-    })
-    .then(data=>{console.log(data.data)})
-    .catch(err=>{return err})
-}
-
-async function apiGetCurrency(curr="") {
-    const key = '2e19c000616e2e8908160923e2553fa5'
-    axios({
-        method:"GET",
-        url:`http://api.coinlayer.com/api/live?access_key=${key}`
-    })
-    .then(data=>console.log(data.data.rates))
-    .catch(err=>{return err})
-}
-
-apiGetHoliday()
-apiGetMotivation()
-apiGetCurrency() */
