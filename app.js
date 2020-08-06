@@ -1,11 +1,17 @@
 const express = require('express')
 const app = express()
-const router = require('./routers/index.js')
-
+const router = require('./routes/index.js')
+const cors = require("cors")
 const PORT = 3000;
+require("dotenv").config()
+const {errorhandling} = require("./middlewares/errorhandling.js")
+
 
 app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
+app.use(cors())
 app.use('/', router)
+app.use(errorhandling)
 
 app.listen(PORT, () => {
     console.log('app running', PORT)
