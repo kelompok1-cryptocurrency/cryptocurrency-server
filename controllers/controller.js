@@ -2,6 +2,13 @@ const { User } = require('../models/index.js');
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 const axios = require("axios")
+const nodemailer = require('nodemailer')
+
+
+
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.CLIENT_ID_GOOLE);
+
 
 class Controller {
     static userLogin(req, res, next){
@@ -42,9 +49,6 @@ class Controller {
         .catch(err=>res.status(400).json(err))
     }
 
-    static googleLogin(req, res, next){
-        //welp
-    }
 
     static async home(req, res, next){
         try {
@@ -67,6 +71,116 @@ class Controller {
         } catch (error) {
             res.status(500).json(error)
         }
+    }
+
+
+
+    static async googleLogin(req, res, next) {
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: req.headers.g_token,
+                audience: process.env.CLIENT_ID_GOOLE,  // Specify the CLIENT_ID of the app that accesses the backend
+                // Or, if multiple clients access the backend:
+                //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+            });
+            const payload = ticket.getPayload();
+            // console.log(req.headers.g_token,'<<<<<<<')
+            // console.log({
+            //     name:payload.name,
+            //     email:payload.email,
+            //     picture:payload.picture,
+            // })
+            let randomstring = Math.random().toString(36).slice(-8);
+            // console.log(randomstring)
+
+            User.findOne({
+                where: {
+                    email: payload.email
+                }
+            }).then(user => {
+                // jika data usernya ada
+                if (user) {
+                    // lempar ke promise lagi
+                    return user
+                } else {
+                    return User.create({
+                        email: payload.email,
+                        password: randomstring
+                    })
+                }
+            }).then(user => {
+                Controller.sendEmail(user.email, randomstring)
+                let access_token = jwt.sign({
+                    id: user.id,
+                    email: user.email
+                }, process.env.JWT_SECRET)
+
+                res.status(200).json({
+                    id: user.id,
+                    email: user.email,
+                    access_token
+                })
+            }).catch(err => {
+                next(err)
+            })
+
+            // res.status(200).json({
+            //     name:payload.name,
+            //     email:payload.email,
+            //     picture:payload.picture,
+            //     pw: randomstring
+            // })
+        } catch (err) {
+            next(err)
+        }
+    }
+
+
+
+
+
+    static sendEmail(email, pass) {
+        //step 1
+        //call transporter and authenticator
+        let transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'pancakebantet@gmail.com',
+                pass: 'coba@7890'
+                //silahkan diisi, ini bisa diisi langung, bisa juga diisi dengan dotenv:
+                //kalo gamau langsung coba liat dokumentasi dotenv
+                //call with process.env.
+                //.env di ignore
+                //di dalem .env isi :
+                //PASSWORD:
+                //EMAIL:
+                //referensi: https://www.youtube.com/watch?v=Va9UKGs1bwI&t
+
+                // pancakebantet@gmail.com
+                // coba@7890
+            }
+        })
+        //step 2 define delivery path
+        let mailOptions = {
+            from: '',
+            //jangan lupa diisi from-nya
+            to: `${email}`,
+            subject: 'Thank you!',
+            text: `Thank you for registering on our website. this is your password "${pass}", please change it or you can use it`
+        }
+        //IMPORTANT!
+        //Before sending, check you email provider regarding the authority for nodemailer use
+        //for an example, you must turn on this feature if you use gmail: https://myaccount.google.com/lesssecureapps
+
+        //Step 3 (Time to send it!)
+
+        transporter.sendMail(mailOptions, (err, data) => {
+            if (err) {
+                console.log(err)
+            } else {
+                console.log('hooray! email is sent!')
+            }
+        })
     }
 }
 
