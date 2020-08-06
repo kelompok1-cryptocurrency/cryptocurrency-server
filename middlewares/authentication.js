@@ -11,14 +11,18 @@ function authenticate(req,res,next) {
             email:credential.email
         }})
         .then(data=>{
-            req.access_id = data.id //mind this variable
-            next()
+            if (data) {
+                req.access_id = data.id //mind this variable
+                next()
+            } else {
+                res.status(401).json('err')
+            }
         })
         .catch(err=>{
-            next(err)
+            res.status(401).json('err')
         })
     } else {
-        next(new Error("Invalid token")) //IDK IF THIS WORKS
+        res.status(401).json('err') //IDK IF THIS WORKS
     }
 }
 
