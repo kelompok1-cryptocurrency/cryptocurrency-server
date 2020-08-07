@@ -13,7 +13,6 @@ const client = new OAuth2Client(process.env.CLIENT_ID_GOOLE);
 
 class Controller {
     static userLogin(req, res, next){
-        console.log('reached login') //del later
         let {email,password} = req.body
         User.findOne({
             where:{
@@ -39,29 +38,26 @@ class Controller {
                             access_token
                         })
                     } else {
-                        res.status(400).json(err)
+                        next({name: 'BadRequest',
+                                errors: [{ msg: 'Invalid Email/Password' }]})
                     }
                 } else {
-                    res.status(404).json(err)
+                    next({name: 'BadRequest',
+                                errors: [{ msg: 'Invalid Email/Password' }]})
                 }
             })
-            .catch(err=>res.status(500).json(err))
+            .catch(err=>next(err))
     }
 
     static userRegister(req, res, next){
-        console.log('reached register') //del later
         let {email,password} = req.body
         User.create({email,password})
         .then(data=>{
             res.status(201).json(data)
         })
-        .catch(err=>res.status(400).json(err.name))
+        .catch(err=>next(err))
     }
 
-
-    static async home(req, res, next){
-
-    }
     static async rates(req, res, next){
         try {
                 let currency = await axios({
@@ -73,7 +69,7 @@ class Controller {
                     rates:currency.data.rates
                 })
         } catch (error) {
-            // res.status(500).json(error)
+            next(err)
         }
     }
 
@@ -92,7 +88,7 @@ class Controller {
                     motivationQuote:motivationQuote.data.slip.advice
                 })
         } catch (error) {
-            // res.status(500).json(error)
+            next(err)
         }
     }
 
@@ -157,10 +153,6 @@ class Controller {
         }
     }
 
-
-
-
-
     static sendEmail(email, pass) {
         //step 1
         //call transporter and authenticator
@@ -199,11 +191,11 @@ class Controller {
         //Step 3 (Time to send it!)
 
         transporter.sendMail(mailOptions, (err, data) => {
-            if (err) {
-                console.log(err)
-            } else {
-                console.log('hooray! email is sent!')
-            }
+            // if (err) {
+            //     console.log(err)
+            // } else {
+            //     console.log('hooray! email is sent!')
+            // }
         })
     }
 }
