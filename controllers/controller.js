@@ -13,6 +13,7 @@ const client = new OAuth2Client(process.env.CLIENT_ID_GOOLE);
 
 class Controller {
     static userLogin(req, res, next){
+        console.log('reached login') //del later
         let {email,password} = req.body
         User.findOne({
             where:{
@@ -27,6 +28,11 @@ class Controller {
                             id:data.id,
                             email:data.email
                         },process.env.JWT_SECRET)
+                        console.log({
+                            id:data.id,
+                            email:data.email,
+                            access_token //del later
+                        })
                         res.status(200).json({
                             id:data.id,
                             email:data.email,
@@ -43,16 +49,35 @@ class Controller {
     }
 
     static userRegister(req, res, next){
+        console.log('reached register') //del later
         let {email,password} = req.body
-        User.create({email,password}) //hash in db hooks -mas Hardim 2020
+        User.create({email,password})
         .then(data=>{
             res.status(201).json(data)
         })
-        .catch(err=>res.status(400).json(err))
+        .catch(err=>res.status(400).json(err.name))
     }
 
 
     static async home(req, res, next){
+        
+    }
+    static async rates(req, res, next){
+        try {
+                let currency = await axios({
+                    method:"GET",
+                    url:`http://api.coinlayer.com/api/live?access_key=${process.env.CURRENCY_KEY}`
+                })
+                console.log(currency.data.rates)
+                res.status(200).json({
+                    rates:currency.data.rates
+                })
+        } catch (error) {
+            // res.status(500).json(error)
+        }
+    }
+
+    static async text(req, res, next){
         try {
                 let holidayDate = await axios({
                     method:"GET",
@@ -62,19 +87,14 @@ class Controller {
                     method:"GET",
                     url:"https://api.adviceslip.com/advice",
                 })
-                let currency = await axios({
-                    method:"GET",
-                    url:`http://api.coinlayer.com/api/live?access_key=${process.env.CURRENCY_KEY}`
+                res.status(200).json({
+                    holidayDate:holidayDate.data,
+                    motivationQuote:motivationQuote.data.slip.advice
                 })
-                // console.log(holidayDate.data)
-                // console.log(motivationQuote.data)
-                // console.log(currency.data.rates)
-                res.status(200).json("success")
         } catch (error) {
-            res.status(500).json(error)
+            // res.status(500).json(error)
         }
     }
-
 
 
     static async googleLogin(req, res, next) {
