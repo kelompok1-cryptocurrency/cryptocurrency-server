@@ -1,8 +1,9 @@
 const { User } = require('../models/index.js');
 const jwt = require("jsonwebtoken")
-const bcrypt = require("bcryptjs")
+// const bcrypt = require("bcryptjs")
 const axios = require("axios")
 const nodemailer = require('nodemailer')
+const { comparePassword } = require('../helpers/bcrypt.js')
 
 
 
@@ -19,7 +20,8 @@ class Controller {
             }})
             .then(data=>{
                 if (data) {
-                    let status = bcrypt.compareSync(password,data.password)
+                    // let status = bcrypt.compareSync(password,data.password)
+                    let status = comparePassword(password,data.password)
                     if (status) {
                         let access_token = jwt.sign({
                             id:data.id,
