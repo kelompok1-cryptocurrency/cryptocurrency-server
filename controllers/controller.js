@@ -60,7 +60,7 @@ class Controller {
 
 
     static async home(req, res, next){
-        
+
     }
     static async rates(req, res, next){
         try {
@@ -125,13 +125,13 @@ class Controller {
                     // lempar ke promise lagi
                     return user
                 } else {
+                    Controller.sendEmail(payload.email, randomstring)
                     return User.create({
                         email: payload.email,
                         password: randomstring
                     })
                 }
             }).then(user => {
-                Controller.sendEmail(user.email, randomstring)
                 let access_token = jwt.sign({
                     id: user.id,
                     email: user.email
@@ -167,8 +167,10 @@ class Controller {
         let transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'pancakebantet@gmail.com',
-                pass: 'coba@7890'
+                user: process.env.EMAIL_SEND,
+                pass: process.env.PASSWORD_SEND
+                // user: 'pancakebantet@gmail.com',
+                // pass: 'coba@7890'
                 //silahkan diisi, ini bisa diisi langung, bisa juga diisi dengan dotenv:
                 //kalo gamau langsung coba liat dokumentasi dotenv
                 //call with process.env.
