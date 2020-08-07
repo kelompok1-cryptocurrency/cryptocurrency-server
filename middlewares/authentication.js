@@ -12,17 +12,24 @@ function authenticate(req,res,next) {
         }})
         .then(data=>{
             if (data) {
-                req.access_id = data.id //mind this variable
+                req.access_id = data.id 
                 next()
             } else {
                 res.status(401).json('err')
             }
         })
         .catch(err=>{
-            res.status(401).json('err')
+            next({
+                    name: 'BadRequest',
+                    errors: [{ msg: 'Invalid Email/Password' }]
+                    })
         })
     } else {
-        res.status(401).json('err') //IDK IF THIS WORKS
+        res.status(401).json('err')
+            next({
+                    name: 'BadRequest',
+                    errors: [{ msg: 'Invalid Email/Password' }]
+                })
     }
 }
 

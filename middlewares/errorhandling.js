@@ -1,6 +1,6 @@
 "use strict"
 
-function errorhandling(req,res,err) {
+function errorhandling(err,req,res) {
     //change this later
     if (err.name == 'SequelizeValidationError') {
         const errors = err.errors.map(el => ({
